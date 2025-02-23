@@ -7,6 +7,11 @@ use Illuminate\Http\Request;
 
 class PersonController extends Controller
 {
+
+    public function __construct() {
+        $this->middleware('auth')->only(['create', 'store']);
+    }
+    
     /**
      * Afficher la liste des personnes avec le créateur
      */
@@ -29,22 +34,30 @@ class PersonController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'birth_name' => 'nullable|string|max:255',
+        $validated = $request->validate([
+            'first_name'   => 'required|string|max:255',
             'middle_names' => 'nullable|string|max:255',
-            'date_of_birth' => 'nullable|date',
+            'last_name'    => 'required|string|max:255',
+            'birth_name'   => 'nullable|string|max:255',
+            'date_of_birth'=> 'nullable|date',
         ]);
-
-        $person = Person::create([
-            'created_by' => auth()->id(), // L'utilisateur connecté est le créateur
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
-            'birth_name' => $request->birth_name,
-            'middle_names' => $request->middle_names,
-            'date_of_birth' => $request->date_of_birth,
-        ]);
+    
+        // Formatage des données :
+        $validated['first_name'] = ucfirst(strtolower($validated['first_name']));
+        
+        if ($validated['middle_names']) {
+            $validated['middle_names'] = collect(explode(',', $validated['middle_names']))
+                                            ->map(fn($name) => ucfirst(strtolower(trim($name))))
+                                            ->implode(', ');
+        }
+    
+        $validated['last_name'] = strtoupper($validated['last_name']);
+        $validated['birth_name'] = $validated['birth_name'] ? strtoupper($validated['birth_name']) : $validated['last_name'];
+    
+        $validated['created_by'] = auth()->id();
+    
+        // Enregistrement en base de données :
+        Person::create($validated);
 
         return redirect()->route('people.index')->with('success', 'Personne ajoutée avec succès !');
     }
