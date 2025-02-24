@@ -9,7 +9,7 @@ class PersonController extends Controller
 {
 
     public function __construct() {
-        $this->middleware('auth')->only(['create', 'store']);
+        $this->middleware('auth');//->only(['create', 'store']);
     }
     
     /**
@@ -17,7 +17,7 @@ class PersonController extends Controller
      */
     public function index()
     {
-        $people = Person::with('creator')->get();
+        $people = Person::with('creator')->paginate(50);
         return view('people.index', compact('people'));
     }
 
