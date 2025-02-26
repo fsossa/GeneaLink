@@ -36,36 +36,40 @@ class Person extends Model
     public function getDegreeWith($target_person_id){
         if ($this->id == $target_person_id) return 0; // Même personne -> degré 0
 
-        $queue = [[$this->id, 0]]; // File d'attente (id_personne, degré)
-        $visited = [$this->id => true]; // Pour éviter les boucles infinies
+        // Vérifier si l'ID de la personne cible est valide
+        if ($this->id == $target_person_id) {
+            return 0;  // La même personne, degré de parenté est 0
+        }
+
+        // Recherche en largeur (BFS)
+        $visited = [];
+        $queue = [
+            [$this->id, 0]  // La personne courante avec un degré initial de 0
+        ];
 
         while (!empty($queue)) {
-            [$current_id, $degree] = array_shift($queue); // Défilement FIFO
+            list($current_person_id, $degree) = array_shift($queue);
 
-            if ($degree >= 25) return false; // Stop si trop long
+            // Si la personne cible est trouvée, retourner le degré
+            if ($current_person_id == $target_person_id) {
+                return $degree;
+            }
 
-            // Récupérer les parents et enfants de la personne actuelle
-            $related_people = DB::table('relationships')
-                ->where('parent_id', $current_id)
-                ->orWhere('child_id', $current_id)
-                ->pluck('parent_id', 'child_id')
-                ->merge(DB::table('relationships')
-                ->where('parent_id', $current_id)
-                ->orWhere('child_id', $current_id)
-                ->pluck('child_id', 'parent_id'))
-                ->unique()
-                ->except([$current_id]);
+            // Marquer la personne comme visitée
+            $visited[$current_person_id] = true;
 
-            foreach ($related_people as $related_id) {
-                if ($related_id == $target_person_id) return $degree + 1; // Trouvé !
+            // Ajouter les parents et les enfants dans la queue, s'ils n'ont pas été visités
+            $current_person = Person::find($current_person_id);
+            $relations = $current_person->parents()->get()->pluck('id')->toArray();
+            $relations = array_merge($relations, $current_person->enfants()->get()->pluck('id')->toArray());
 
-                if (!isset($visited[$related_id])) {
-                    $visited[$related_id] = true;
-                    $queue[] = [$related_id, $degree + 1]; // Ajouter en file d'attente
+            //Si inferieur à 25
+            foreach ($relations as $relation_id) {
+                if (!isset($visited[$relation_id])) {
+                    $queue[] = [$relation_id, $degree + 1];  // Ajouter la personne dans la queue avec un degré incrémenté
                 }
             }
         }
-
         return false; // Pas de connexion trouvée
     }
 }
