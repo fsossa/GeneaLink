@@ -1,66 +1,59 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Projet de Généalogie - README
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Explication des données
 
-## About Laravel
+### Cas 0 : Présentation et Installation
+Je suis **Fulbert SOSSA**, étudiant en **troisième année de licence Informatique MIAGE** (Méthode Informatique Appliquée à la Gestion) à l'Université de Rennes.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Pour installer et compiler ce projet, suivez ces étapes :
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+1. Exécutez la commande suivante pour créer les tables nécessaires dans la base de données :
+   ```bash
+   php artisan migrate
+   ```
+2. Importez le fichier `data.sql` joint au projet pour insérer les données initiales.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+### **Premier cas : Propositions de Modifications**
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Lorsqu'un utilisateur propose une modification d'une fiche personne ou une relation familiale, une nouvelle entrée est ajoutée dans la table `contributions`.
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+Les champs suivants sont remplis :
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- **created_by** : Identifiant de l'utilisateur ayant proposé la modification.
+- **relationship_id** : Identifiant de la relation existante (NULL si c'est une nouvelle relation).
+- **parent_id** et **child_id** : Identifiants des entités concernées par la relation.
+- **users_accept** et **users_reject** : Champs JSON initialisés à des listes vides pour suivre les votes des utilisateurs.
+- **confirm_relation** : Définie par défaut à `false`, indiquant que la modification est en attente de validation.
 
-## Laravel Sponsors
+#### **Mise à jour des votes**
+Les utilisateurs de la communauté peuvent accepter ou rejeter une proposition :
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+- Les votes favorables sont ajoutés dans le champ **users_accept**.
+- Les votes défavorables sont ajoutés dans le champ **users_reject**.
 
-### Premium Partners
+---
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+### **Deuxième cas : Validation des Modifications**
 
-## Contributing
+Ce processus se déroule en deux phases :
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+#### **A) Les Votes**
+Un utilisateur connecté peut confirmer ou rejeter une demande de modification ou une nouvelle relation.
 
-## Code of Conduct
+- **Confirmer** : L'ID de l'utilisateur est ajouté à la liste `users_accept` des personnes ayant validé cette contribution.
+- **Rejeter** : L'ID de l'utilisateur est ajouté à la liste `users_reject` des personnes ayant refusé cette contribution.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+#### **B) La Décision Finale**
+Lors des votes, deux scénarios sont possibles :
 
-## Security Vulnerabilities
+1. **Validation de la Contribution**
+   - Si **3 utilisateurs** confirment la modification avant que 3 autres ne la rejettent, la contribution est **approuvée**.
+   - La relation est alors enregistrée dans la table **relationships** et devient officielle.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+2. **Rejet de la Contribution**
+   - Si **3 utilisateurs** rejettent la modification avant qu'elle ne soit validée, la contribution est **annulée** et ne sera plus soumise au vote.
 
-## License
+---
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
