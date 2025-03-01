@@ -45,4 +45,25 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function person()
+    {
+        return $this->hasOne(Person::class, 'created_by');  // Lien vers l'utilisateur-créateur
+    }
+
+    public function contribution()
+    {
+        return $this->hasOne(Contribution::class, 'created_by');  // Lien vers l'utilisateur-créateur
+    }
+
+    public function invitations()
+    {
+        return $this->hasMany(Invitation::class, 'created_by');
+    }
+
+    // Relation : Un utilisateur peut créer plusieurs contributions
+    public function contributions()
+    {
+        return $this->hasMany(Contribution::class, 'created_by');
+    }
 }
