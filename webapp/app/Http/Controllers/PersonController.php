@@ -14,9 +14,9 @@ use Illuminate\Support\Str;
 class PersonController extends Controller
 {
 
-    public function __construct() {
-        $this->middleware('auth');//->only(['create', 'store']);
-    }
+    // public function __construct() {
+    //     $this->middleware('auth');//->only(['create', 'store']);
+    // }
     
     /**
      * Afficher la liste des personnes avec le créateur
@@ -119,8 +119,9 @@ class PersonController extends Controller
     /** Liste des invitations envoyés */
     public function invitations(){
         $contibutions = Contribution::orderByDesc('id')->get();
-         return view('admin.list_invitations',compact('contibutions'));
-     }
+        dd($contibutions);
+        return view('people.list_invitations',compact('contibutions'));
+    }
     
      /** Confirmer ou rejeter une relation */
     public function make_action_contribution($id , $action){
@@ -197,7 +198,7 @@ class PersonController extends Controller
                 'parent_id'=> $second,
             ]);
         }
-        return redirect()->route('invitations')->with('success',"Demande de modification envoyée");
+        return redirect()->route('people.invitations')->with('success',"Demande de modification envoyée");
     }
 
     /** Aller sur la page d'inscription */
